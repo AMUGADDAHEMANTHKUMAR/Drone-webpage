@@ -9,14 +9,36 @@ interface ContactModalProps {
 
 export default function ContactModal({ isOpen, onClose }: ContactModalProps) {
     const [submitted, setSubmitted] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [formData, setFormData] = useState({ name: '', email: '', message: '' });
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setSubmitted(true);
-        setTimeout(() => {
-            setSubmitted(false);
-            onClose();
-        }, 2000);
+        setIsLoading(true);
+
+        try {
+            const response = await fetch('/api/contact', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData),
+            });
+
+            if (response.ok) {
+                setSubmitted(true);
+                setTimeout(() => {
+                    setSubmitted(false);
+                    onClose();
+                    setFormData({ name: '', email: '', message: '' });
+                }, 3000);
+            } else {
+                alert("Transmission failed. Secure channel compromised.");
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Transmission error.");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -51,19 +73,48 @@ export default function ContactModal({ isOpen, onClose }: ContactModalProps) {
                                 <form onSubmit={handleSubmit} className="space-y-4">
                                     <div>
                                         <label className="block text-xs font-space text-blue-400 mb-1 tracking-widest">IDENTITY</label>
-                                        <input type="text" required className="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-blue-500 focus:outline-none transition-colors" placeholder="Full Name or Callsign" />
+                                        <input
+                                            type="text"
+                                            required
+                                            value={formData.name}
+                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                            className="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-blue-500 focus:outline-none transition-colors"
+                                            placeholder="Full Name as per records"
+                                        />
                                     </div>
                                     <div>
                                         <label className="block text-xs font-space text-blue-400 mb-1 tracking-widest">COMMs LINK</label>
-                                        <input type="email" required className="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-blue-500 focus:outline-none transition-colors" placeholder="Email Address" />
+                                        <input
+                                            type="email"
+                                            required
+                                            value={formData.email}
+                                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                            className="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-blue-500 focus:outline-none transition-colors"
+                                            placeholder="Email Address"
+                                        />
                                     </div>
                                     <div>
                                         <label className="block text-xs font-space text-blue-400 mb-1 tracking-widest">TRANSMISSION</label>
-                                        <textarea required rows={4} className="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-blue-500 focus:outline-none transition-colors" placeholder="Message content..." />
+                                        <textarea
+                                            required
+                                            rows={4}
+                                            value={formData.message}
+                                            onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                                            className="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-blue-500 focus:outline-none transition-colors"
+                                            placeholder="Message content..."
+                                        />
                                     </div>
 
-                                    <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold font-space py-4 rounded transition-all shadow-[0_0_20px_rgba(0,122,255,0.3)] hover:shadow-[0_0_30px_rgba(0,122,255,0.5)]">
-                                        ESTABLISH LINK
+                                    <button
+                                        type="submit"
+                                        disabled={isLoading}
+                                        className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-blue-600/50 text-white font-bold font-space py-4 rounded transition-all shadow-[0_0_20px_rgba(0,122,255,0.3)] hover:shadow-[0_0_30px_rgba(0,122,255,0.5)] flex justify-center"
+                                    >
+                                        {isLoading ? (
+                                            <span className="animate-pulse">ESTABLISHING LINK...</span>
+                                        ) : (
+                                            "ESTABLISH LINK"
+                                        )}
                                     </button>
                                 </form>
                             </>
